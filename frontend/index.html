@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crypto Trading System - Binance Testnet</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js for candlestick charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Lightweight Charts for professional candlestick -->
+    <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+</head>
+<body>
+    <div class="dashboard">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                <i class="fas fa-chart-line"></i>
+                <span>PinSec.Ai</span>
+            </div>
+            
+            <nav class="nav-menu">
+                <a href="#" class="nav-item active" data-page="dashboard">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#" class="nav-item" data-page="trading">
+                    <i class="fas fa-exchange-alt"></i>
+                    <span>Trading</span>
+                </a>
+                <a href="#" class="nav-item" data-page="positions">
+                    <i class="fas fa-briefcase"></i>
+                    <span>Positions</span>
+                </a>
+                <a href="#" class="nav-item" data-page="signals">
+                    <i class="fas fa-bell"></i>
+                    <span>Signals</span>
+                </a>
+                <a href="#" class="nav-item" data-page="history">
+                    <i class="fas fa-history"></i>
+                    <span>Trade History</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="connection-status">
+                    <span class="status-indicator connected"></span>
+                    <span>Binance Testnet</span>
+                </div>
+                <div class="system-time" id="systemTime"></div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="header">
+                <div class="header-title">
+                    <h1 id="pageTitle">Dashboard</h1>
+                    <span class="live-badge">
+                        <i class="fas fa-circle"></i> LIVE
+                    </span>
+                </div>
+                <div class="header-actions">
+                    <div class="symbol-selector">
+                        <label for="symbolSelect">Symbol:</label>
+                        <select id="symbolSelect" class="symbol-dropdown">
+                            <option value="btcusdt">BTC/USDT</option>
+                            <option value="ethusdt">ETH/USDT</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-primary" id="addSymbolBtn">
+                        <i class="fas fa-plus"></i> Add Symbol
+                    </button>
+                    <div class="ws-status">
+                        <i class="fas fa-plug"></i>
+                        <span id="wsStatus">WebSocket: Connected</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Dashboard Page -->
+            <div id="dashboard-page" class="page active">
+                <!-- KPI Cards -->
+                <div class="kpi-grid">
+                    <div class="kpi-card">
+                        <div class="kpi-icon" style="background: rgba(0, 200, 83, 0.1); color: #00c853;">
+                            <i class="fas fa-bitcoin"></i>
+                        </div>
+                        <div class="kpi-info">
+                            <span class="kpi-label">BTC/USDT</span>
+                            <span class="kpi-value" id="btcPrice">$0.00</span>
+                            <span class="kpi-change" id="btcChange">+0.00%</span>
+                        </div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-icon" style="background: rgba(98, 0, 234, 0.1); color: #6200ea;">
+                            <i class="fab fa-ethereum"></i>
+                        </div>
+                        <div class="kpi-info">
+                            <span class="kpi-label">ETH/USDT</span>
+                            <span class="kpi-value" id="ethPrice">$0.00</span>
+                            <span class="kpi-change" id="ethChange">+0.00%</span>
+                        </div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-icon" style="background: rgba(255, 109, 0, 0.1); color: #ff6d00;">
+                            <i class="fas fa-chart-pie"></i>
+                        </div>
+                        <div class="kpi-info">
+                            <span class="kpi-label">Total P&L</span>
+                            <span class="kpi-value" id="totalPnl">$0.00</span>
+                            <span class="kpi-change" id="pnlPercent">0.00%</span>
+                        </div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-icon" style="background: rgba(41, 121, 255, 0.1); color: #2979ff;">
+                            <i class="fas fa-tasks"></i>
+                        </div>
+                        <div class="kpi-info">
+                            <span class="kpi-label">Active Positions</span>
+                            <span class="kpi-value" id="activePositions">0</span>
+                            <span class="kpi-change">Trades</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chart Section -->
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <h3>Candlestick Chart</h3>
+                        <div class="chart-controls">
+                            <button class="btn btn-sm active">1m</button>
+                            <button class="btn btn-sm">5m</button>
+                            <button class="btn btn-sm">15m</button>
+                        </div>
+                    </div>
+                    <div id="candlestick-chart" class="candlestick-chart"></div>
+                </div>
+
+                <!-- Strategy Cards -->
+                <div class="strategy-grid">
+                    <div class="strategy-card variant-a">
+                        <div class="strategy-header">
+                            <h3>Variant A - Conservative</h3>
+                            <span class="strategy-badge">SL: 15%</span>
+                        </div>
+                        <div class="strategy-content">
+                            <div class="strategy-signal" id="variantASignal">
+                                <span class="signal-label">Signal:</span>
+                                <span class="signal-value neutral">WAITING</span>
+                            </div>
+                            <div class="strategy-metrics">
+                                <div class="metric">
+                                    <span class="metric-label">Position</span>
+                                    <span class="metric-value" id="variantAPosition">None</span>
+                                </div>
+                                <div class="metric">
+                                    <span class="metric-label">Entry</span>
+                                    <span class="metric-value" id="variantAEntry">$0.00</span>
+                                </div>
+                                <div class="metric">
+                                    <span class="metric-label">P&L</span>
+                                    <span class="metric-value" id="variantAPnl">$0.00</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="strategy-card variant-b">
+                        <div class="strategy-header">
+                            <h3>Variant B - Aggressive</h3>
+                            <span class="strategy-badge">SL: 10%</span>
+                        </div>
+                        <div class="strategy-content">
+                            <div class="strategy-signal" id="variantBSignal">
+                                <span class="signal-label">Signal:</span>
+                                <span class="signal-value neutral">WAITING</span>
+                            </div>
+                            <div class="strategy-metrics">
+                                <div class="metric">
+                                    <span class="metric-label">Position</span>
+                                    <span class="metric-value" id="variantBPosition">None</span>
+                                </div>
+                                <div class="metric">
+                                    <span class="metric-label">Entry</span>
+                                    <span class="metric-value" id="variantBEntry">$0.00</span>
+                                </div>
+                                <div class="metric">
+                                    <span class="metric-label">P&L</span>
+                                    <span class="metric-value" id="variantBPnl">$0.00</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Signals Table -->
+                <div class="signals-table-container">
+                    <div class="table-header">
+                        <h3>Recent Trading Signals</h3>
+                        <a href="#" class="view-all" data-page="signals">View All <i class="fas fa-arrow-right"></i></a>
+                    </div>
+                    <table class="signals-table" id="recentSignalsTable">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Symbol</th>
+                                <th>Action</th>
+                                <th>Price</th>
+                                <th>Variant</th>
+                                <th>Strength</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td colspan="6" class="loading">Waiting for signals...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Trading Page -->
+            <div id="trading-page" class="page">
+                <div class="trading-panel">
+                    <div class="order-form-container">
+                        <h2>Place Order</h2>
+                        <form id="orderForm" class="order-form">
+                            <div class="form-group">
+                                <label>Symbol</label>
+                                <select class="form-control" id="orderSymbol">
+                                    <option value="btcusdt">BTC/USDT</option>
+                                    <option value="ethusdt">ETH/USDT</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Side</label>
+                                <div class="order-side">
+                                    <button type="button" class="side-btn buy active">BUY</button>
+                                    <button type="button" class="side-btn sell">SELL</button>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Quantity</label>
+                                <input type="number" class="form-control" id="orderQuantity" step="0.001" min="0.001" value="0.001">
+                            </div>
+                            <div class="form-group">
+                                <label>Order Type</label>
+                                <select class="form-control" id="orderType">
+                                    <option value="market">Market</option>
+                                    <option value="limit">Limit</option>
+                                </select>
+                            </div>
+                            <div class="form-group" id="limitPriceGroup" style="display: none;">
+                                <label>Limit Price</label>
+                                <input type="number" class="form-control" id="limitPrice" step="0.01">
+                            </div>
+                            <div class="form-group">
+                                <label>Strategy Variant</label>
+                                <select class="form-control" id="orderVariant">
+                                    <option value="A">Variant A (SL 15%)</option>
+                                    <option value="B">Variant B (SL 10%)</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-block">Place Order</button>
+                        </form>
+                    </div>
+                    <div class="market-depth">
+                        <h2>Market Depth</h2>
+                        <div id="orderBook">
+                            <div class="order-book-section">
+                                <h4>Asks</h4>
+                                <div id="asks" class="order-book-entries"></div>
+                            </div>
+                            <div class="order-book-section">
+                                <h4>Bids</h4>
+                                <div id="bids" class="order-book-entries"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Positions Page -->
+            <div id="positions-page" class="page">
+                <div class="positions-container">
+                    <h2>Active Positions</h2>
+                    <table class="positions-table" id="positionsTable">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Symbol</th>
+                                <th>Side</th>
+                                <th>Entry Price</th>
+                                <th>Current Price</th>
+                                <th>Quantity</th>
+                                <th>P&L</th>
+                                <th>P&L %</th>
+                                <th>Stop Loss</th>
+                                <th>Variant</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td colspan="11" class="loading">No active positions</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Signals Page -->
+            <div id="signals-page" class="page">
+                <div class="signals-container">
+                    <h2>All Trading Signals</h2>
+                    <div class="signals-filter">
+                        <button class="filter-btn active" data-filter="all">All</button>
+                        <button class="filter-btn" data-filter="A">Variant A</button>
+                        <button class="filter-btn" data-filter="B">Variant B</button>
+                        <button class="filter-btn" data-filter="BUY">Buy</button>
+                        <button class="filter-btn" data-filter="SELL">Sell</button>
+                    </div>
+                    <table class="signals-table" id="allSignalsTable">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Symbol</th>
+                                <th>Action</th>
+                                <th>Price</th>
+                                <th>Variant</th>
+                                <th>Strength</th>
+                                <th>Reason</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td colspan="7" class="loading">Loading signals...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- History Page -->
+            <div id="history-page" class="page">
+                <div class="history-container">
+                    <h2>Trade History</h2>
+                    <table class="history-table" id="historyTable">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Symbol</th>
+                                <th>Side</th>
+                                <th>Price</th>
+                                <th>Quantity</th>
+                                <th>Total</th>
+                                <th>Variant</th>
+                                <th>Order ID</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td colspan="8" class="loading">No trade history</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Add Symbol Modal -->
+    <div id="addSymbolModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Add Trading Symbol</h2>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="addSymbolForm">
+                    <div class="form-group">
+                        <label>Symbol</label>
+                        <input type="text" class="form-control" id="newSymbol" placeholder="e.g., adausdt" required>
+                        <small class="form-text">Enter symbol in lowercase (e.g., adausdt, solusdt)</small>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">Add Symbol</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast">
+        <div class="toast-content">
+            <i class="toast-icon fas fa-check-circle"></i>
+            <span class="toast-message"></span>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
